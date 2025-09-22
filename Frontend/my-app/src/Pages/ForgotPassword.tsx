@@ -591,14 +591,11 @@ const ForgotPassword = () => {
             transition={{ delay: 0.7 }}
           >
             Need help?{' '}
-            {/* Use regular a tag for external links */}
-            <a 
-              href="mailto:support@medquick.com" 
-              className="text-green-600 hover:text-green-800 transition duration-200 font-semibold inline-block"
-            >
-              <motion.span 
+            {/* Link to contact support page */}
+            <Link href="/contact-support" className="text-green-600 hover:text-green-800 transition duration-200 font-semibold inline-block">
+              <motion.span
                 className="inline-block"
-                whileHover={{ 
+                whileHover={{
                   scale: 1.05,
                   transition: { type: "spring", stiffness: 400 }
                 }}
@@ -606,7 +603,7 @@ const ForgotPassword = () => {
               >
                 Contact Support
               </motion.span>
-            </a>
+            </Link>
           </motion.p>
         </motion.div>
       </motion.div>
