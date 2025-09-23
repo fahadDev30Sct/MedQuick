@@ -419,25 +419,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onSignOut }) => {
         )}
       </AnimatePresence>
 
-      {/* Admin Dashboard Content Area */}
-      <div className="min-h-screen bg-gray-100 p-6">
-        <motion.div 
-          className="bg-white rounded-lg shadow-md p-6"
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, type: "spring", stiffness: 120 }}
-        >
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Admin Dashboard</h2>
-          <p className="text-gray-600">Welcome to the MedQuick Admin Panel. Use the navigation above to manage your account.</p>
-          
-          {/* API Configuration Display */}
-          <div className="mt-4 p-4 bg-green-50 rounded-lg">
-            <h3 className="text-sm font-semibold text-green-800 mb-2">API Configuration</h3>
-            <p className="text-xs text-green-600">Base URL: {process.env.NEXT_PUBLIC_API_BASE_URL}</p>
-            <p className="text-xs text-green-600">Reset Password Endpoint: /api/Users/resetPassword</p>
-          </div>
-        </motion.div>
-      </div>
+      
     </>
   );
 };
