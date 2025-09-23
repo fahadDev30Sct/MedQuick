@@ -3,10 +3,13 @@ import React, { useState, useEffect } from 'react';
 import Login from '../Pages/Login';
 import AdminNavbar from '../AdminPanels/Admin/AdminNavbar';
 import AdminSidebar from '../AdminPanels/Admin/AdminSidebar';
+import Authorization from '../AdminPanels/Admin/Authorization';
+import Users from '../AdminPanels/Admin/Users'; // Import the Users component
 
 const Page = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeComponent, setActiveComponent] = useState('dashboard');
 
   useEffect(() => {
     checkAuthStatus();
@@ -30,57 +33,69 @@ const Page = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const handleSidebarItemClick = (componentId: string) => {
+    setActiveComponent(componentId);
+  };
+
+  const renderActiveComponent = () => {
+    switch (activeComponent) {
+      case 'dashboard':
+        return (
+          <div>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Admin Dashboard</h1>
+              <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
+            </div>
+          </div>
+        );
+      case 'users':
+        return <Users />;
+      case 'authorization':
+        return <Authorization />;
+      case 'settings':
+        return (
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Settings</h1>
+            <p className="text-gray-600">Manage your application settings here.</p>
+          </div>
+        );
+      default:
+        return (
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Admin Dashboard</h1>
+            <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
+          </div>
+        );
+    }
+  };
+
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       {isLoggedIn ? (
-        // Fixed layout structure
-        <div className="flex h-screen bg-gray-100 overflow-hidden">
-          {/* Sidebar - Fixed positioning */}
-          <div className={`fixed left-0 top-0 z-40 transition-all duration-300 ${
-            isSidebarCollapsed ? 'w-16' : 'w-64'
-          }`}>
-            <AdminSidebar 
-              onSignOut={handleSignOut}
-              isCollapsed={isSidebarCollapsed}
-              onToggle={toggleSidebar}
-            />
+        <div className="flex flex-col h-screen">
+          <div className="fixed top-0 left-0 right-0 z-50 h-16">
+            <AdminNavbar onSignOut={handleSignOut} />
           </div>
           
-          {/* Main Content Area */}
-          <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
-            isSidebarCollapsed ? 'ml-16' : 'ml-64'
-          }`}>
-            {/* Navbar - Fixed to top */}
-            <div className="fixed top-0 right-0 left-0 z-30 transition-all duration-300"
-              style={{
-                left: isSidebarCollapsed ? '4rem' : '16rem',
-                right: 0
-              }}
-            >
-              <AdminNavbar onSignOut={handleSignOut} />
+          <div className="flex flex-1 pt-16 h-full">
+            <div className={`fixed top-16 left-0 bottom-0 z-40 transition-all duration-300 ${
+              isSidebarCollapsed ? 'w-20' : 'w-64'
+            }`}>
+              <AdminSidebar 
+                onSignOut={handleSignOut}
+                isCollapsed={isSidebarCollapsed}
+                onToggle={toggleSidebar}
+                onItemClick={handleSidebarItemClick}
+              />
             </div>
             
-            {/* Dashboard Content - Pushed below navbar */}
-            <div className="flex-1 pt-20 p-6 overflow-auto mt-4">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Welcome to Admin Dashboard</h2>
-              <p className="text-gray-600">You are successfully logged in!</p>
-              
-              {/* Dashboard content */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-lg font-semibold mb-2">Dashboard Stats</h3>
-                  <p className="text-gray-600">Some important statistics here...</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-lg font-semibold mb-2">Recent Activity</h3>
-                  <p className="text-gray-600">Recent user activities...</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-lg font-semibold mb-2">Quick Actions</h3>
-                  <p className="text-gray-600">Common admin actions...</p>
-                </div>
+            <main className={`flex-1 transition-all duration-300 min-h-full ${
+              isSidebarCollapsed ? 'ml-20' : 'ml-64'
+            }`}>
+              <div className="p-8 h-full overflow-auto">
+                {renderActiveComponent()}
               </div>
-            </div>
+            </main>
           </div>
         </div>
       ) : (

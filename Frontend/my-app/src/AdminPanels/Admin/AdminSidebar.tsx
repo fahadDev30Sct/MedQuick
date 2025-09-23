@@ -6,16 +6,25 @@ import {
   FiSettings, 
   FiChevronLeft, 
   FiChevronRight,
-  FiLogOut 
+  FiLogOut,
+  FiBarChart2,
+  FiDatabase,
+  FiShield
 } from 'react-icons/fi';
 
 interface AdminSidebarProps {
   onSignOut: () => void;
   isCollapsed: boolean;
   onToggle: () => void;
+  onItemClick: (itemId: string) => void;
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ onSignOut, isCollapsed, onToggle }) => {
+const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
+  onSignOut, 
+  isCollapsed, 
+  onToggle, 
+  onItemClick 
+}) => {
   const [activeItem, setActiveItem] = useState('dashboard');
 
   const menuItems = [
@@ -26,9 +35,15 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ onSignOut, isCollapsed, onT
       path: '/admin'
     },
     {
+      id: 'users',
+      label: 'Users',
+      icon: FiUsers,
+      path: '/admin/users'
+    },
+    {
       id: 'authorization',
       label: 'Authorization',
-      icon: FiUsers,
+      icon: FiShield,
       path: '/admin/authorization'
     },
     {
@@ -39,39 +54,45 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ onSignOut, isCollapsed, onT
     }
   ];
 
+  const handleItemClick = (itemId: string) => {
+    setActiveItem(itemId);
+    onItemClick(itemId);
+  };
+
   return (
-    <div className={`bg-gray-800 text-white h-screen flex flex-col transition-all duration-300 ${
-      isCollapsed ? 'w-16' : 'w-64'
-    }`}>
-      {/* Header */}
-      <div className="p-4 border-b border-gray-700 flex items-center justify-between h-16">
-        {!isCollapsed && (
-          <h1 className="text-xl font-bold whitespace-nowrap">Admin Panel</h1>
-        )}
+    <div 
+      className={`bg-green-800 text-white flex flex-col transition-all duration-300 h-full ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+    >
+      {/* Collapse Button Only */}
+      <div className="p-4 flex items-center justify-end">
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-gray-700 transition-colors flex-shrink-0"
+          className="p-2 rounded-lg hover:bg-green-700 transition-colors flex-shrink-0"
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}
         </button>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 px-4 pb-4 overflow-auto">
         <ul className="space-y-2">
           {menuItems.map((item) => (
             <li key={item.id}>
               <button
-                onClick={() => setActiveItem(item.id)}
-                className={`w-full flex items-center p-3 rounded-lg transition-colors ${
+                onClick={() => handleItemClick(item.id)}
+                className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
                   activeItem === item.id 
-                    ? 'bg-blue-600 text-white' 
-                    : 'hover:bg-gray-700'
+                    ? 'bg-green-700 text-white shadow-md' 
+                    : 'hover:bg-green-700 hover:shadow-sm'
                 } ${isCollapsed ? 'justify-center' : ''}`}
+                title={isCollapsed ? item.label : ''}
               >
                 <item.icon size={20} className="flex-shrink-0" />
                 {!isCollapsed && (
-                  <span className="ml-3 whitespace-nowrap">{item.label}</span>
+                  <span className="ml-3 whitespace-nowrap font-medium">{item.label}</span>
                 )}
               </button>
             </li>
@@ -80,16 +101,17 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ onSignOut, isCollapsed, onT
       </nav>
 
       {/* Sign Out Button */}
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-green-700">
         <button
           onClick={onSignOut}
-          className={`w-full flex items-center p-3 rounded-lg hover:bg-red-600 transition-colors ${
+          className={`w-full flex items-center p-3 rounded-lg hover:bg-red-600 transition-all duration-200 ${
             isCollapsed ? 'justify-center' : ''
           }`}
+          title={isCollapsed ? "Sign Out" : ""}
         >
           <FiLogOut size={20} className="flex-shrink-0" />
           {!isCollapsed && (
-            <span className="ml-3 whitespace-nowrap">Sign Out</span>
+            <span className="ml-3 whitespace-nowrap font-medium">Sign Out</span>
           )}
         </button>
       </div>
