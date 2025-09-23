@@ -4,6 +4,7 @@ import axios from 'axios';
 import { AxiosError } from 'axios';
 import { motion, type Variants, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import CryptoJS from 'crypto-js'; // Add this import for MD5 hashing
 
 interface FormData {
   userName: string;
@@ -36,6 +37,11 @@ const Login = () => {
     if (successMessage) setSuccessMessage('');
   };
 
+  // Function to encrypt password with MD5
+  const encryptPassword = (password: string): string => {
+    return CryptoJS.MD5(password).toString();
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -43,9 +49,18 @@ const Login = () => {
     setSuccessMessage('');
 
     try {
+      // Create a copy of formData with encrypted password
+      const encryptedFormData = {
+        ...formData,
+        password: encryptPassword(formData.password) // Encrypt password before sending
+      };
+
+      console.log('Original password:', formData.password);
+      console.log('Encrypted password (MD5):', encryptedFormData.password);
+
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/Users/login`,
-        formData,
+        encryptedFormData, // Send encrypted data
         {
           headers: {
             'Content-Type': 'application/json'
@@ -614,7 +629,7 @@ const Login = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
-            Secure login powered by advanced encryption
+            Secure login powered by MD5 encryption
           </motion.p>
           <motion.p 
             className="text-xs text-gray-500 mt-2"
