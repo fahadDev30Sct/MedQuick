@@ -4,7 +4,7 @@ import axios from 'axios';
 import { AxiosError } from 'axios';
 import { motion, type Variants, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import CryptoJS from 'crypto-js'; // Add this import for MD5 hashing
+import CryptoJS from 'crypto-js';
 
 interface FormData {
   userName: string;
@@ -16,7 +16,11 @@ interface ApiErrorResponse {
   message?: string;
 }
 
-const Login = () => {
+interface LoginProps {
+  onLoginSuccess?: () => void;
+}
+
+const Login = ({ onLoginSuccess }: LoginProps) => {
   const [formData, setFormData] = useState<FormData>({
     userName: '',
     password: '',
@@ -77,6 +81,13 @@ const Login = () => {
         if (jwtToken) {
           localStorage.setItem('jwtToken', jwtToken);
           console.log('JWT Token stored successfully');
+          
+          // Call the success callback after a short delay to show success message
+          setTimeout(() => {
+            if (onLoginSuccess) {
+              onLoginSuccess();
+            }
+          }, 1500);
         } else {
           console.error('Login successful, but no JWT token received.');
           setError('Login successful, but a session token was not provided.');
@@ -598,23 +609,23 @@ const Login = () => {
 
             {/* Additional Options */}
             <motion.div 
-  className="text-center"
-  variants={itemVariants}
->
-  <Link href="/forgot-password" passHref>
-    <motion.a 
-      className="text-sm text-green-600 hover:text-green-800 transition duration-200 inline-block"
-      whileHover={{ 
-        scale: 1.05,
-        x: 5,
-        transition: { type: "spring", stiffness: 400 }
-      }}
-      whileTap={{ scale: 0.95 }}
-    >
-      Forgot your password?
-    </motion.a>
-  </Link>
-</motion.div>
+              className="text-center"
+              variants={itemVariants}
+            >
+              <Link href="/forgot-password" passHref>
+                <motion.a 
+                  className="text-sm text-green-600 hover:text-green-800 transition duration-200 inline-block"
+                  whileHover={{ 
+                    scale: 1.05,
+                    x: 5,
+                    transition: { type: "spring", stiffness: 400 }
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Forgot your password?
+                </motion.a>
+              </Link>
+            </motion.div>
           </form>
         </motion.div>
 
