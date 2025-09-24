@@ -4,16 +4,29 @@ import Login from '../Pages/Login';
 import AdminNavbar from '../AdminPanels/Admin/AdminNavbar';
 import AdminSidebar from '../AdminPanels/Admin/AdminSidebar';
 import Authorization from '../AdminPanels/Admin/Authorization';
-import Users from '../AdminPanels/Admin/Users'; // Import the Users component
+import Users from '../AdminPanels/Admin/Users';
 
 const Page = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeComponent, setActiveComponent] = useState('dashboard');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
+    checkScreenSize();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
   }, []);
+
+  const checkScreenSize = () => {
+    setIsMobile(window.innerWidth < 768); // 768px is typical breakpoint for md/tailwind
+  };
 
   const checkAuthStatus = () => {
     const token = localStorage.getItem('jwtToken');
@@ -74,23 +87,31 @@ const Page = () => {
       {isLoggedIn ? (
         <div className="flex flex-col h-screen">
           <div className="fixed top-0 left-0 right-0 z-50 h-16">
-            <AdminNavbar onSignOut={handleSignOut} />
+            <AdminNavbar 
+              onSignOut={handleSignOut} 
+              onItemClick={handleSidebarItemClick}
+              activeComponent={activeComponent}
+            />
           </div>
           
           <div className="flex flex-1 pt-16 h-full">
-            <div className={`fixed top-16 left-0 bottom-0 z-40 transition-all duration-300 ${
-              isSidebarCollapsed ? 'w-20' : 'w-64'
-            }`}>
-              <AdminSidebar 
-                onSignOut={handleSignOut}
-                isCollapsed={isSidebarCollapsed}
-                onToggle={toggleSidebar}
-                onItemClick={handleSidebarItemClick}
-              />
-            </div>
+            {/* Sidebar - Hidden on mobile */}
+            {!isMobile && (
+              <div className={`fixed top-16 left-0 bottom-0 z-40 transition-all duration-300 ${
+                isSidebarCollapsed ? 'w-20' : 'w-64'
+              }`}>
+                <AdminSidebar 
+                  onSignOut={handleSignOut}
+                  isCollapsed={isSidebarCollapsed}
+                  onToggle={toggleSidebar}
+                  onItemClick={handleSidebarItemClick}
+                />
+              </div>
+            )}
             
+            {/* Main content - adjust margin based on sidebar visibility */}
             <main className={`flex-1 transition-all duration-300 min-h-full ${
-              isSidebarCollapsed ? 'ml-20' : 'ml-64'
+              isMobile ? 'ml-0' : isSidebarCollapsed ? 'ml-20' : 'ml-64'
             }`}>
               <div className="p-8 h-full overflow-auto">
                 {renderActiveComponent()}

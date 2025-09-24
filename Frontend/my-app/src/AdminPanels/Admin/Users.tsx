@@ -69,7 +69,6 @@ interface UserFormData {
   isStaff: boolean;
 }
 
-// Axios interceptor to add JWT token to all requests
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('jwtToken');
@@ -171,8 +170,14 @@ const Users = () => {
     if (!formData.userName.trim()) errors.userName = 'Username is required';
     if (!formData.email.trim()) errors.email = 'Email is required';
     if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Email is invalid';
-    if (!formData.password) errors.password = 'Password is required';
-    if (formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
+
+    // The fix for the red line error is here:
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+
     if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match';
     if (!formData.contactNo.trim()) errors.contactNo = 'Contact number is required';
     if (!formData.userType) errors.userType = 'User type is required';
