@@ -56,6 +56,12 @@ interface RoleModule {
   updatedBy: string;
 }
 
+interface DeleteModulesRequest {
+  moduleIds: number[];
+  practiceId: number;
+  deletedBy: string;
+}
+
 const Authorization = () => {
   const [activeTab, setActiveTab] = useState<'rights' | 'roles' | 'modules'>('rights');
   const [roles, setRoles] = useState<Role[]>([]);
@@ -82,6 +88,9 @@ const Authorization = () => {
     nodesvalues: '',
     inactive: false,
   });
+
+  const [selectedModuleIds, setSelectedModuleIds] = useState<number[]>([]);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   useEffect(() => {
     fetchRoles();
@@ -155,6 +164,105 @@ const Authorization = () => {
     }
   };
 
+  const handleBulkDeleteModules = async () => {
+    if (selectedModuleIds.length === 0) {
+      setError('Please select at least one module to delete');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const deleteRequest: DeleteModulesRequest = {
+        moduleIds: selectedModuleIds,
+        practiceId: 2,
+        deletedBy: "admin"
+      };
+
+      await axios.post(`${API_BASE_URL}/api/Module/DeleteModules`, deleteRequest, {
+        headers: getAuthHeaders()
+      });
+
+      setSuccess(`Successfully deleted ${selectedModuleIds.length} module(s)`);
+      setSelectedModuleIds([]);
+      setShowDeleteConfirmation(false);
+      await fetchModules();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error: any) {
+      console.error('Error deleting modules:', error);
+      setError('Failed to delete modules');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteModule = async (moduleId: number) => {
+    if (window.confirm('Are you sure you want to delete this module? This action cannot be undone.')) {
+      try {
+        setLoading(true);
+        
+        const deleteRequest: DeleteModulesRequest = {
+          moduleIds: [moduleId],
+          practiceId: 2,
+          deletedBy: "admin"
+        };
+
+        await axios.post(`${API_BASE_URL}/api/Module/DeleteModules`, deleteRequest, {
+          headers: getAuthHeaders()
+        });
+
+        setSuccess('Module deleted successfully!');
+        await fetchModules();
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (error: any) {
+        console.error('Error with bulk delete API, trying single delete:', error);
+        
+        try {
+          await axios.delete(`${API_BASE_URL}/api/Module/DeleteModule?id=${moduleId}`, {
+            headers: getAuthHeaders()
+          });
+          setSuccess('Module deleted successfully!');
+          await fetchModules();
+          setTimeout(() => setSuccess(''), 3000);
+        } catch (fallbackError) {
+          console.error('Error deleting module:', fallbackError);
+          setError('Failed to delete module');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const toggleModuleSelection = (moduleId: number) => {
+    setSelectedModuleIds(prev => 
+      prev.includes(moduleId) 
+        ? prev.filter(id => id !== moduleId)
+        : [...prev, moduleId]
+    );
+  };
+
+  const selectAllModules = () => {
+    const allModuleIds = getAllModuleIds(modules);
+    setSelectedModuleIds(allModuleIds);
+  };
+
+  const clearAllSelections = () => {
+    setSelectedModuleIds([]);
+  };
+
+  const getAllModuleIds = (moduleList: ModuleNode[]): number[] => {
+    let ids: number[] = [];
+    moduleList.forEach(module => {
+      ids.push(module.id);
+      if (module.children && module.children.length > 0) {
+        ids = [...ids, ...getAllModuleIds(module.children)];
+      }
+    });
+    return ids;
+  };
+
   const handleModuleToggle = (moduleId: number) => {
     setSelectedModules(prevModules =>
       prevModules.includes(moduleId)
@@ -220,7 +328,7 @@ const Authorization = () => {
         id: editingRole ? editingRole.id : 0,
         name: roleFormData.name,
         description: roleFormData.description,
-        practiceId: roleFormData.practiceId || 2, 
+        practiceId: roleFormData.practiceId || 2,
         inactive: false,
         createdDate: editingRole ? editingRole.createdDate : new Date().toISOString(),
         updatedDate: new Date().toISOString(),
@@ -330,7 +438,7 @@ const Authorization = () => {
       const payload = {
         id: 0,
         ...newModuleData,
-        practiceId: 2, 
+        practiceId: 2,
         createdDate: new Date().toISOString(),
         updatedDate: new Date().toISOString(),
         createdBy: "admin",
@@ -382,25 +490,6 @@ const Authorization = () => {
       setError('Failed to update module');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDeleteModule = async (moduleId: number) => {
-    if (window.confirm('Are you sure you want to delete this module?')) {
-      try {
-        setLoading(true);
-        await axios.delete(`${API_BASE_URL}/api/Module/DeleteModule?id=${moduleId}`, {
-          headers: getAuthHeaders()
-        });
-        setSuccess('Module deleted successfully!');
-        await fetchModules();
-        setTimeout(() => setSuccess(''), 3000);
-      } catch (error) {
-        console.error('Error deleting module:', error);
-        setError('Failed to delete module');
-      } finally {
-        setLoading(false);
-      }
     }
   };
 
@@ -473,6 +562,62 @@ const Authorization = () => {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+    );
+  };
+
+  const renderModuleItem = (module: ModuleNode, level: number = 0): ReactElement => {
+    const isSelected = selectedModuleIds.includes(module.id);
+    const hasChildren = module.children && module.children.length > 0;
+    const indentation = level * 20;
+
+    return (
+      <div key={module.id}>
+        <div 
+          className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200 shadow-sm"
+          style={{ paddingLeft: `${indentation + 12}px` }}
+        >
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => toggleModuleSelection(module.id)}
+            className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 mr-3"
+          />
+          
+          <div className="flex items-center space-x-3 flex-1">
+            <div className="w-5 h-5 flex items-center justify-center rounded-full bg-green-100">
+              <FiList size={12} className="text-green-600" />
+            </div>
+            <span className="text-gray-700 font-medium">{module.name}</span>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <motion.button
+              onClick={() => openAddModuleModal(module)}
+              className="text-orange-600 hover:text-orange-800 p-2 rounded-full hover:bg-orange-100 transition-colors"
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.9 }}
+              title="Edit module"
+            >
+              <FiEdit2 size={18} />
+            </motion.button>
+            <motion.button
+              onClick={() => handleDeleteModule(module.id)}
+              className="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-100 transition-colors"
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.9 }}
+              title="Delete module"
+            >
+              <FiTrash2 size={18} />
+            </motion.button>
+          </div>
+        </div>
+
+        {hasChildren && (
+          <div className="ml-8 mt-2 space-y-2">
+            {module.children!.map(child => renderModuleItem(child, level + 1))}
+          </div>
+        )}
       </div>
     );
   };
@@ -747,92 +892,68 @@ const Authorization = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
     >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-gray-800 flex items-center">
-          <FiGrid className="mr-2 text-green-600" />
-          Module Library
-        </h3>
-        <motion.button
-          onClick={() => openAddModuleModal()}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition duration-200 shadow-md"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <FiPlus size={16} />
-          <span>Add Module</span>
-        </motion.button>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 space-y-4 md:space-y-0">
+        <div>
+          <h3 className="text-2xl font-bold text-gray-800 flex items-center">
+            <FiGrid className="mr-2 text-green-600" />
+            Module Library
+          </h3>
+          <p className="text-gray-600 mt-1">View all available modules and their hierarchy. Select multiple modules for bulk operations.</p>
+        </div>
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+          {selectedModuleIds.length > 0 && (
+            <motion.button
+              onClick={() => setShowDeleteConfirmation(true)}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition duration-200 shadow-md"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FiTrash2 size={16} />
+              <span>Delete Selected ({selectedModuleIds.length})</span>
+            </motion.button>
+          )}
+          <motion.button
+            onClick={() => openAddModuleModal()}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition duration-200 shadow-md"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <FiPlus size={16} />
+            <span>Add Module</span>
+          </motion.button>
+        </div>
       </div>
-      <p className="text-gray-600 mb-4">View all available modules and their hierarchy. You can also edit and delete modules.</p>
+
+      {modules.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <motion.button
+            onClick={selectAllModules}
+            className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200 transition"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Select All
+          </motion.button>
+          <motion.button
+            onClick={clearAllSelections}
+            className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Clear Selection
+          </motion.button>
+          {selectedModuleIds.length > 0 && (
+            <span className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm">
+              {selectedModuleIds.length} module(s) selected
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto shadow-inner">
         {modules.length > 0 ? (
           <div className="space-y-2">
-            {modules.map(module => (
-              <div key={module.id} className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 flex items-center justify-center rounded-full bg-green-100">
-                      <FiList size={12} className="text-green-600" />
-                    </div>
-                    <span className="text-gray-700 font-medium">{module.name}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <motion.button
-                      onClick={(e) => { e.stopPropagation(); openAddModuleModal(module); }}
-                      className="text-orange-600 hover:text-orange-800 p-2 rounded-full hover:bg-orange-100 transition-colors"
-                      whileHover={{ scale: 1.2 }}
-                      whileTap={{ scale: 0.9 }}
-                      title="Edit module"
-                    >
-                      <FiEdit2 size={18} />
-                    </motion.button>
-                    <motion.button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteModule(module.id); }}
-                      className="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-100 transition-colors"
-                      whileHover={{ scale: 1.2 }}
-                      whileTap={{ scale: 0.9 }}
-                      title="Delete module"
-                    >
-                      <FiTrash2 size={18} />
-                    </motion.button>
-                  </div>
-                </div>
-                {module.children && module.children.length > 0 && (
-                  <div className="ml-8 mt-2 space-y-2">
-                    {module.children.map(child => (
-                      <div key={child.id} className="p-2 border border-gray-100 rounded hover:bg-gray-50 flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 flex items-center justify-center rounded-full bg-gray-100">
-                            <FiList size={10} className="text-gray-600" />
-                          </div>
-                          <span className="text-gray-600 text-sm">{child.name}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <motion.button
-                            onClick={(e) => { e.stopPropagation(); openAddModuleModal(child); }}
-                            className="text-orange-500 hover:text-orange-700 p-1"
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.9 }}
-                            title="Edit Module"
-                          >
-                            <FiEdit2 size={12} />
-                          </motion.button>
-                          <motion.button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteModule(child.id); }}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.9 }}
-                            title="Delete Module"
-                          >
-                            <FiTrash2 size={12} />
-                          </motion.button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+            {modules.map(module => renderModuleItem(module))}
           </div>
         ) : (
           <p className="text-gray-500">No modules found. Add a new one to get started.</p>
@@ -943,6 +1064,76 @@ const Authorization = () => {
     </AnimatePresence>
   );
 
+  const renderDeleteConfirmationModal = () => (
+    <AnimatePresence>
+      {showDeleteConfirmation && (
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setShowDeleteConfirmation(false)}
+        >
+          <motion.div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <FiAlertTriangle size={24} className="text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">Delete Modules</h3>
+                  <p className="text-gray-600">This action cannot be undone.</p>
+                </div>
+              </div>
+              
+              <p className="text-gray-700 mb-4">
+                Are you sure you want to delete {selectedModuleIds.length} selected module(s)? 
+                This will permanently remove the modules and their associations.
+              </p>
+              
+              <div className="flex justify-end space-x-3">
+                <motion.button
+                  onClick={() => setShowDeleteConfirmation(false)}
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-200"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Cancel
+                </motion.button>
+                
+                <motion.button
+                  onClick={handleBulkDeleteModules}
+                  disabled={loading}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg transition duration-200 flex items-center space-x-2 shadow-md"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full border-2 border-t-2 border-white border-t-transparent animate-spin"></div>
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiTrash2 size={16} />
+                      <span>Delete {selectedModuleIds.length} Module(s)</span>
+                    </>
+                  )}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
       <motion.div
@@ -1022,6 +1213,7 @@ const Authorization = () => {
       </motion.div>
 
       {renderAddModuleModal()}
+      {renderDeleteConfirmationModal()}
 
       <AnimatePresence>
         {loading && (

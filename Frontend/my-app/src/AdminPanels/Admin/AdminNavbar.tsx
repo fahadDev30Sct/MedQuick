@@ -194,7 +194,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onSignOut, onItemClick, activ
             
             {/* Title */}
             <div className="hidden sm:block">
-              <h1 className="text-white text-xl sm:text-2xl font-bold">MedQuick Admin</h1>
+              <h1 className="text-white text-xl sm:text-2xl font-bold">ClinicPro Admin</h1>
               <p className="text-green-200 text-xs sm:text-sm">Dashboard Panel</p>
             </div>
           </motion.div>
