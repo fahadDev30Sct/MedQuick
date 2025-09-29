@@ -328,11 +328,9 @@ const Authorization = () => {
         id: editingRole ? editingRole.id : 0,
         name: roleFormData.name,
         description: roleFormData.description,
-        practiceId: roleFormData.practiceId || 2,
+       
         inactive: false,
-        createdDate: editingRole ? editingRole.createdDate : new Date().toISOString(),
-        updatedDate: new Date().toISOString(),
-        parentId: editingRole ? editingRole.parentId : 0
+        
       };
 
       await axios.post(`${API_BASE_URL}/api/Module/AddRoles`, payload, {
@@ -444,11 +442,11 @@ const Authorization = () => {
         createdBy: "admin",
         updatedBy: "admin"
       };
-      
-      await axios.post(`${API_BASE_URL}/api/Module/AddModule`, payload, {
+
+      await axios.post(`${API_BASE_URL}/api/Module/AddModules`, [payload], {
         headers: getAuthHeaders()
       });
-      
+
       setSuccess('Module added successfully!');
       setShowAddModuleModal(false);
       setNewModuleData({ name: '', value: '', parentId: 0, nodesvalues: '', inactive: false });
@@ -476,7 +474,7 @@ const Authorization = () => {
         updatedDate: new Date().toISOString()
       };
 
-      await axios.post(`${API_BASE_URL}/api/Module/AddModule`, payload, {
+      await axios.post(`${API_BASE_URL}/api/Module/AddModules`, payload, {
         headers: getAuthHeaders()
       });
       
