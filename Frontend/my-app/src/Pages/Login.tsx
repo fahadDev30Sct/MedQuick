@@ -7,7 +7,7 @@ import Link from 'next/link';
 import CryptoJS from 'crypto-js';
 
 interface FormData {
-  userName: string;
+  email: string;
   password: string;
   app: boolean;
 }
@@ -22,7 +22,7 @@ interface LoginProps {
 
 const Login = ({ onLoginSuccess }: LoginProps) => {
   const [formData, setFormData] = useState<FormData>({
-    userName: '',
+    email: '',
     password: '',
     app: true
   });
@@ -437,28 +437,6 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Username Field */}
-            <motion.div variants={itemVariants}>
-              <label htmlFor="userName" className="block text-sm font-semibold text-green-800 mb-2">
-                Username
-              </label>
-              <motion.div
-                variants={inputFocusVariants}
-                initial="initial"
-                whileFocus="focused"
-              >
-                <input
-                  type="text"
-                  id="userName"
-                  name="userName"
-                  value={formData.userName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border-2 border-green-200 rounded-lg focus:outline-none transition duration-200 text-gray-700 placeholder-gray-400"
-                  placeholder="Enter your username"
-                />
-              </motion.div>
-            </motion.div>
 
             {/* Password Field */}
             <motion.div variants={itemVariants}>
